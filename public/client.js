@@ -75,11 +75,18 @@ const api = {
     }
   }
   
-  /*
-    Hello wow
-  */
-  
-  // cool wow
+  , async removeExperiment({ session_id, experiment_id }){
+    const [session] = await api.verifySession(session_id)
+    
+    if( session.admin ) {
+      await sql`
+        delete from experiments
+        where id = ${experiment_id}
+      `
+      return [experiment_id]
+    }
+    return []
+  }
   
   , async createExperiment({ session_id }){
     const [session] = await api.verifySession(session_id)
@@ -410,6 +417,17 @@ function AdminExperiments(){
                      }
                      , 'View'
                   )
+                  , h('button.view'
+                     , 
+                     { onclick: async () => {
+                       const experiment_id = x.id
+                       const session_id = state().user.value.id
+                       await api.removeExperiment({ session_id, experiment_id })
+                       update($.experiments( x => x.value.filter( y => y.id !== x.id ) ))
+                     }
+                     }
+                     , 'Delete'
+                  )
                 )
             )
           )
@@ -437,7 +455,7 @@ function AdminExperiments(){
             el.removeAttribute('disabled')
           }
           }
-          , 'Flush Schema'
+          , 'Flush Schema ☠'
       )
      , h('button'
           , 
@@ -474,6 +492,9 @@ function Experiment({ attrs: { id } }){
     h('.route'
       , h('h1', 'Experiment') 
       , h('pre', JSON.stringify(state(), null, 2))   
+      , h('button', { onclick(){} }, 'Start')
+      , h('button', { onclick(){} }, 'Update')
+      , h('button', { onclick(){} }, 'Complete')
       , h(h.route.Link, { href: '/access/login' }, 'Login')
     )
   
